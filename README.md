@@ -24,7 +24,12 @@ Chương trình mã hóa và giải mã văn bản sử dụng thuật toán Pla
 - Hướng dẫn sử dụng tích hợp
 
 ### RSA Cipher
-- Đang phát triển
+- Tạo khóa RSA từ hai số nguyên tố p, q
+- Mã hóa/Giải mã văn bản
+- Hiển thị chi tiết các bước tính toán khóa
+- Hiển thị từng bước mã hóa/giải mã
+- Lịch sử mã hóa/giải mã
+- Xuất kết quả ra file
 
 ## Yêu cầu hệ thống
 
@@ -73,7 +78,7 @@ pip install streamlit
 ### Khởi động ứng dụng Streamlit
 
 ```bash
-streamlit run playfair.py
+streamlit run UI.py
 ```
 
 Chương trình sẽ tự động mở trình duyệt tại địa chỉ: `http://localhost:8501`
@@ -84,23 +89,56 @@ Nhấn `Ctrl + C` trong terminal để dừng server
 
 ## Hướng dẫn sử dụng
 
-### Mã hóa văn bản
+### Chọn thuật toán
 
-1. Chọn tab "Mã hóa/Giải mã"
-2. Nhập khóa mã hóa (Key) vào ô bên trái
-3. Chọn "Mã hóa" ở cột bên phải
-4. Nhập văn bản cần mã hóa
-5. Nhấn nút "Mã hóa"
-6. Kết quả sẽ hiển thị bên dưới, có thể tải xuống
+Trong sidebar, chọn thuật toán mong muốn:
+- **Playfair Cipher**: Mã hóa thay thế digraph cổ điển
+- **RSA Cipher**: Mã hóa bất đối xứng hiện đại
 
-### Giải mã văn bản
+### Playfair Cipher
 
+#### Mã hóa văn bản
+1. Chọn "Playfair Cipher" trong sidebar
+2. Chọn tab "Mã hóa/Giải mã"
+3. Nhập khóa mã hóa (Key) vào ô bên trái
+4. Chọn "Mã hóa" ở cột bên phải
+5. Nhập văn bản cần mã hóa
+6. Nhấn nút "Mã hóa"
+7. Kết quả sẽ hiển thị bên dưới, có thể tải xuống
+
+#### Giải mã văn bản
 1. Chọn tab "Mã hóa/Giải mã"
 2. Nhập khóa mã hóa (Key) - phải giống với khóa đã dùng để mã hóa
 3. Chọn "Giải mã" ở cột bên phải
 4. Nhập văn bản đã mã hóa
 5. Nhấn nút "Giải mã"
 6. Kết quả sẽ hiển thị bên dưới
+
+### RSA Cipher
+
+#### Tạo khóa RSA
+1. Chọn "RSA Cipher" trong sidebar
+2. Chọn tab "Tạo khóa"
+3. Nhập hai số nguyên tố p và q
+4. (Tùy chọn) Tùy chỉnh giá trị e
+5. Nhấn nút "Tạo khóa RSA"
+6. Khóa công khai và khóa riêng sẽ được hiển thị
+
+#### Mã hóa văn bản
+1. Đảm bảo đã tạo khóa RSA
+2. Chọn tab "Mã hóa/Giải mã"
+3. Chọn "Mã hóa"
+4. Nhập văn bản cần mã hóa
+5. Nhấn nút "Mã hóa"
+6. Kết quả sẽ hiển thị dưới dạng chuỗi số
+
+#### Giải mã văn bản
+1. Đảm bảo đã tạo khóa RSA
+2. Chọn tab "Mã hóa/Giải mã"
+3. Chọn "Giải mã"
+4. Nhập chuỗi số đã mã hóa (cách nhau bởi dấu cách)
+5. Nhấn nút "Giải mã"
+6. Kết quả sẽ hiển thị văn bản gốc
 
 ### Cấu hình
 
@@ -128,9 +166,11 @@ NT101.Q13/
 └── .venv/              # Môi trường ảo (không commit)
 ```
 
-## Giải thích thuật toán Playfair
+## Giải thích thuật toán
 
-### Ma trận 5×5
+### Playfair Cipher
+
+#### Ma trận 5×5
 - Sử dụng 25 chữ cái (A-Z)
 - Chữ J được gộp với I
 - Chỉ mã hóa chữ cái
@@ -149,6 +189,37 @@ NT101.Q13/
 2. **Cùng cột**: Lấy ký tự bên trên (vòng tròn)
 3. **Khác hàng/cột**: Tạo hình chữ nhật, lấy góc đối diện
 
+### RSA Cipher
+
+RSA là thuật toán mã hóa bất đối xứng sử dụng cặp khóa công khai và khóa riêng.
+
+#### Tạo khóa
+1. Chọn hai số nguyên tố khác nhau: **p** và **q**
+2. Tính **n = p × q** (modulus)
+3. Tính **φ(n) = (p-1) × (q-1)** (hàm Euler)
+4. Chọn **e** sao cho 1 < e < φ(n) và gcd(e, φ(n)) = 1 (khóa công khai)
+5. Tính **d** sao cho (d × e) mod φ(n) = 1 (khóa riêng)
+
+#### Mã hóa
+- Với mỗi ký tự, chuyển thành mã ASCII: **m**
+- Tính: **c = m^e mod n**
+- **c** là ký tự đã mã hóa
+
+#### Giải mã
+- Với mỗi số đã mã hóa: **c**
+- Tính: **m = c^d mod n**
+- Chuyển **m** về ký tự ASCII
+
+#### Ưu điểm
+- Bảo mật cao dựa trên độ khó của bài toán phân tích số nguyên lớn
+- Không cần chia sẻ khóa bí mật
+- Hỗ trợ chữ ký số
+
+#### Lưu ý
+- Cần chọn số nguyên tố đủ lớn để đảm bảo an toàn
+- Khóa riêng (d) phải được bảo mật tuyệt đối
+- Với n nhỏ, chỉ phù hợp mã hóa văn bản ngắn
+
 ## Khắc phục sự cố
 
 ### Lỗi: Module 'streamlit' not found
@@ -158,7 +229,7 @@ pip install streamlit
 
 ### Lỗi: Port 8501 đã được sử dụng
 ```bash
-streamlit run playfair.py --server.port 8502
+streamlit run UI.py --server.port 8502
 ```
 
 ### Giao diện không hiển thị
@@ -171,13 +242,7 @@ streamlit run playfair.py --server.port 8502
 - Đảm bảo kích thước ma trận giống nhau khi mã hóa và giải mã
 
 ## Lưu ý bảo mật
-- Chỉ nên sử dụng cho mục đích học tập và giáo dục, không an toàn cho dữ liệu thực tế
-- Đối với dữ liệu quan trọng, sử dụng các thuật toán hiện đại như AES, RSA
+- **Playfair Cipher**: Chỉ nên sử dụng cho mục đích học tập, không an toàn cho dữ liệu thực tế
+- **RSA Cipher**: Implementation này dùng cho giáo dục với số nguyên tố nhỏ. Trong thực tế, cần sử dụng số nguyên tố rất lớn (2048-4096 bit) và thư viện mã hóa chuẩn
 
-## Phát triển tiếp theo
-- [ ] Hoàn thiện thuật toán RSA
-- [ ] Thêm các cipher khác (Caesar, Vigenere, AES)
-- [ ] Hỗ trợ upload/download file
-- [ ] Phân tích tần suất ký tự
-- [ ] So sánh các thuật toán
 
