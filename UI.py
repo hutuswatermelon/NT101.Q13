@@ -113,13 +113,10 @@ def main() -> None:
                     plaintext = st.text_area("Nhập văn bản cần mã hóa:", height=150,
                                             placeholder="Nhập văn bản của bạn tại đây...")
                     
-                    col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 1])
+                    col_btn1, col_btn2 = st.columns([3, 1])
                     with col_btn1:
                         encrypt_btn = st.button("Mã hóa", type="primary", use_container_width=True)
                     with col_btn2:
-                        if st.button("Paste", use_container_width=True):
-                            st.info("Dán văn bản vào ô trên")
-                    with col_btn3:
                         if plaintext and st.button("Xóa", use_container_width=True):
                             st.rerun()
                     
@@ -174,13 +171,10 @@ def main() -> None:
                     ciphertext = st.text_area("Nhập văn bản cần giải mã:", height=150,
                                              placeholder="Nhập văn bản đã mã hóa...")
                     
-                    col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 1])
+                    col_btn1, col_btn2 = st.columns([3, 1])
                     with col_btn1:
                         decrypt_btn = st.button("Giải mã", type="primary", use_container_width=True)
                     with col_btn2:
-                        if st.button("Paste", use_container_width=True):
-                            st.info("Dán văn bản vào ô trên")
-                    with col_btn3:
                         if ciphertext and st.button("Xóa", use_container_width=True):
                             st.rerun()
                     
