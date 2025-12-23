@@ -1,20 +1,30 @@
+## Giới thiệu chung
+Trường Đại học Công nghệ Thông tin - Đại học Quốc Gia TP. Hồ Chí Minh
+Đồ án môn học An toàn mạng máy tính - NT101.Q13
+### Thành viên
+- Cáp Hữu Tú - 23521696
+- Huỳnh Ngọc Ngân Tuyền - 23521753
+- Nguyễn Tài Quang - 23521587
+
+---
+
 # Chương trình Mã hóa/Giải mã Playfair & RSA
 
-Chương trình mã hóa và giải mã văn bản sử dụng thuật toán Playfair Cipher với giao diện Streamlit hiện đại.
+Chương trình mã hóa và giải mã văn bản sử dụng thuật toán Playfair Cipher với giao diện Streamlit.
 
 ## Tính năng
 
 ### Playfair Cipher
-- ✅ Mã hóa/Giải mã văn bản
-- ✅ Hỗ trợ ma trận 5×5 (chữ cái A-Z) và 6×6 (chữ cái + số 0-9)
-- ✅ Hiển thị từng bước mã hóa/giải mã chi tiết
-- ✅ Giữ nguyên khoảng trắng trong văn bản
-- ✅ Lịch sử mã hóa/giải mã
-- ✅ Xuất kết quả ra file
-- ✅ Hướng dẫn sử dụng tích hợp
+- Mã hóa/Giải mã văn bản
+- Hỗ trợ ma trận 5×5 (chữ cái A-Z) và 6×6 (chữ cái + số 0-9)
+- Hiển thị từng bước mã hóa/giải mã chi tiết
+- Giữ nguyên khoảng trắng trong văn bản
+- Lịch sử mã hóa/giải mã
+- Xuất kết quả ra file
+- Hướng dẫn sử dụng tích hợp
 
 ### RSA Cipher
-- 🚧 Đang phát triển
+- Đang phát triển
 
 ## Yêu cầu hệ thống
 
@@ -33,7 +43,7 @@ cd NT101.Q13
 # Hoặc tải và giải nén file zip
 ```
 
-### Bước 2: Tạo môi trường ảo (khuyến nghị)
+### Bước 2: Tạo môi trường ảo
 
 **Windows:**
 ```bash
@@ -94,7 +104,7 @@ Nhấn `Ctrl + C` trong terminal để dừng server
 
 ### Cấu hình
 
-Trong sidebar, bạn có thể:
+Trong sidebar, có thể:
 - Chọn kích thước ma trận (5×5 hoặc 6×6)
 - Bật/tắt hiển thị từng bước
 - Xem thống kê và xóa lịch sử
@@ -109,11 +119,13 @@ Trong sidebar, bạn có thể:
 
 ```
 NT101.Q13/
-├── playfair.py           # File chính chứa code
-├── requirements.txt      # Danh sách thư viện cần thiết
-├── README.md            # File hướng dẫn này
-├── .gitignore           # Danh sách file/thư mục bỏ qua git
-└── .venv/               # Môi trường ảo (không commit)
+├── UI.py               # File chính chứa giao diện
+├── playfair.py         # File chứa code playfair cipher
+├── rsa.py              # File chứa code rsa cipher
+├── requirements.txt    # Danh sách thư viện cần thiết
+├── README.md           # File hướng dẫn này
+├── .gitignore          # Danh sách file/thư mục bỏ qua git
+└── .venv/              # Môi trường ảo (không commit)
 ```
 
 ## Giải thích thuật toán Playfair
@@ -159,23 +171,13 @@ streamlit run playfair.py --server.port 8502
 - Đảm bảo kích thước ma trận giống nhau khi mã hóa và giải mã
 
 ## Lưu ý bảo mật
-
-- Playfair Cipher là thuật toán cổ điển, không an toàn cho dữ liệu thực tế
-- Chỉ nên sử dụng cho mục đích học tập và giáo dục
+- Chỉ nên sử dụng cho mục đích học tập và giáo dục, không an toàn cho dữ liệu thực tế
 - Đối với dữ liệu quan trọng, sử dụng các thuật toán hiện đại như AES, RSA
 
 ## Phát triển tiếp theo
-
 - [ ] Hoàn thiện thuật toán RSA
 - [ ] Thêm các cipher khác (Caesar, Vigenere, AES)
 - [ ] Hỗ trợ upload/download file
 - [ ] Phân tích tần suất ký tự
 - [ ] So sánh các thuật toán
 
-## Tác giả
-
-Dự án môn Computer Network Security - NT101.Q13
-
-## Giấy phép
-
-Dự án học tập - Sử dụng tự do cho mục đích giáo dục
