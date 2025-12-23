@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import datetime
 from typing import List, Dict
-from playfair import generate_matrix, playfair_encrypt, playfair_decrypt
+from playfair import generate_matrix, playfair_encrypt, playfair_decrypt, format_output
 from rsa import (
     generate_rsa_keys, 
     rsa_encrypt, 
@@ -79,6 +79,27 @@ def main() -> None:
             st.subheader("Cấu hình")
             matrix_size = st.radio("Kích thước ma trận:", [5, 6], 
                                    help="5×5: Chỉ chữ cái (A-Z, J→I)\n6×6: Chữ cái + số (A-Z, 0-9)")
+            
+            st.markdown("**Tùy chọn mã hóa:**")
+            pad_double_letters = st.checkbox("Pad double-letters", value=True,
+                                            help="Thêm ký tự padding giữa các chữ giống nhau")
+            
+            padding_char = st.selectbox("Ký tự padding:", ['X', 'Q', 'Z'],
+                                       help="Ký tự dùng để padding và giữa các chữ giống nhau")
+            
+            output_format = st.selectbox("Định dạng kết quả:", 
+                                        ['none', 'groups_of_5', 'groups_of_2'],
+                                        format_func=lambda x: {
+                                            'none': 'Không định dạng',
+                                            'groups_of_5': 'Nhóm 5 ký tự',
+                                            'groups_of_2': 'Nhóm 2 ký tự (digraphs)'
+                                        }[x],
+                                        help="Cách hiển thị kết quả mã hóa")
+            
+            preserve_format = st.checkbox("Giữ khoảng trắng/ký tự gốc", value=True,
+                                         help="Bỏ chọn để xuất text thuần (tương thích công cụ chuẩn)")
+            
+            st.markdown("**Hiển thị:**")
             show_steps = st.checkbox("Hiển thị từng bước", value=True)
             
             st.markdown("---")
@@ -128,7 +149,11 @@ def main() -> None:
                         else:
                             try:
                                 matrix, pos_map = generate_matrix(key, size=matrix_size)
-                                ciphertext, steps, preprocessed, ciphertext_with_spaces = playfair_encrypt(plaintext, matrix, pos_map)
+                                ciphertext, steps, preprocessed, ciphertext_with_spaces = playfair_encrypt(
+                                    plaintext, matrix, pos_map, 
+                                    pad_double_letters=pad_double_letters,
+                                    padding_char=padding_char
+                                )
                                 
                                 if not ciphertext:
                                     st.warning("Không có ký tự hợp lệ để mã hóa!")
@@ -142,11 +167,22 @@ def main() -> None:
                                 st.subheader("Kết quả:")
                                 result_col1, result_col2 = st.columns([4, 1])
                                 with result_col1:
-                                    st.code(ciphertext_with_spaces, language=None)
+                                    # Chọn output dựa trên preserve_format
+                                    output_text = ciphertext_with_spaces if preserve_format else ciphertext
+                                    formatted_output = format_output(output_text, output_format)
+                                    st.code(formatted_output, language=None)
+                                    
+                                    # Hiển thị thông tin về format
+                                    if preserve_format:
+                                        st.caption("💡 Giữ nguyên khoảng trắng và ký tự đặc biệt từ văn bản gốc")
+                                    else:
+                                        st.caption("💡 Chỉ ký tự mã hóa (tương thích với công cụ Playfair chuẩn)")
+                                
                                 with result_col2:
+                                    output_text = ciphertext_with_spaces if preserve_format else ciphertext
                                     st.download_button(
                                         "Lưu",
-                                        ciphertext_with_spaces,
+                                        format_output(output_text, output_format),
                                         file_name=f"encrypted_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
                                         mime="text/plain"
                                     )
@@ -186,7 +222,10 @@ def main() -> None:
                         else:
                             try:
                                 matrix, pos_map = generate_matrix(key, size=matrix_size)
-                                plaintext, steps, plaintext_with_spaces = playfair_decrypt(ciphertext, matrix, pos_map)
+                                plaintext, steps, plaintext_with_spaces = playfair_decrypt(
+                                    ciphertext, matrix, pos_map,
+                                    padding_char=padding_char
+                                )
                                 
                                 if not plaintext:
                                     st.warning("Không có ký tự hợp lệ để giải mã!")
@@ -197,11 +236,22 @@ def main() -> None:
                                 st.subheader("Kết quả:")
                                 result_col1, result_col2 = st.columns([4, 1])
                                 with result_col1:
-                                    st.code(plaintext_with_spaces, language=None)
+                                    # Chọn output dựa trên preserve_format
+                                    output_text = plaintext_with_spaces if preserve_format else plaintext
+                                    formatted_output = format_output(output_text, output_format)
+                                    st.code(formatted_output, language=None)
+                                    
+                                    # Hiển thị thông tin về format
+                                    if preserve_format:
+                                        st.caption("💡 Giữ nguyên khoảng trắng và ký tự đặc biệt từ văn bản gốc")
+                                    else:
+                                        st.caption("💡 Chỉ text giải mã (không có ký tự đặc biệt)")
+                                
                                 with result_col2:
+                                    output_text = plaintext_with_spaces if preserve_format else plaintext
                                     st.download_button(
                                         "Lưu",
-                                        plaintext_with_spaces,
+                                        format_output(output_text, output_format),
                                         file_name=f"decrypted_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
                                         mime="text/plain"
                                     )

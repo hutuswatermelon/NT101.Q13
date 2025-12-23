@@ -7,51 +7,94 @@ Matrix = List[List[str]]
 PositionMap = Dict[str, Tuple[int, int]]
 
 
-def extract_spaces(text: str) -> Tuple[str, List[int]]:
+def build_char_mapping(original: str, processed: str, matrix_size: int = 5) -> Dict[int, int]:
     """
-    Extract text without spaces and record space positions.
+    Build mapping from original text positions to processed text positions.
     
     Args:
-        text: Input text with spaces
+        original: Original text with all characters
+        processed: Processed text (after preprocess_text)
+        matrix_size: Size of matrix
     
     Returns:
-        Tuple of (text_without_spaces, list_of_space_positions)
+        Dictionary mapping original_pos -> processed_pos for valid characters
     """
-    space_positions = []
-    text_without_spaces = []
+    mapping = {}
+    processed_idx = 0
     
-    for i, char in enumerate(text):
-        if char == ' ':
-            space_positions.append(i)
+    for orig_idx, char in enumerate(original):
+        # Check if character is valid
+        is_valid = False
+        if matrix_size == 5:
+            is_valid = char.isalpha()
+        elif matrix_size == 6:
+            is_valid = char.isalnum()
+        
+        if is_valid:
+            if processed_idx < len(processed):
+                mapping[orig_idx] = processed_idx
+                processed_idx += 1
+    
+    return mapping
+
+
+def extract_invalid_chars(text: str, matrix_size: int = 5) -> Tuple[str, List[Tuple[int, str]]]:
+    """
+    Extract valid text and record invalid character positions.
+    
+    Args:
+        text: Input text with mixed characters
+        matrix_size: Size of matrix (5 or 6)
+    
+    Returns:
+        Tuple of (valid_text, list_of_invalid_chars) where:
+        - valid_text: text with only valid characters
+        - list_of_invalid_chars: list of (position, character) tuples
+    """
+    invalid_chars = []
+    valid_text = []
+    
+    for char in text:
+        # Check if character is valid based on matrix size
+        is_valid = False
+        if matrix_size == 5:
+            is_valid = char.isalpha()
+        elif matrix_size == 6:
+            is_valid = char.isalnum()
+        
+        if is_valid:
+            valid_text.append(char)
         else:
-            text_without_spaces.append(char)
+            # Lưu vị trí chèn và ký tự
+            invalid_chars.append((len(valid_text), char))
     
-    return ''.join(text_without_spaces), space_positions
+    return ''.join(valid_text), invalid_chars
 
 
-def restore_spaces(text: str, space_positions: List[int]) -> str:
+def restore_invalid_chars(text: str, invalid_chars: List[Tuple[int, str]]) -> str:
     """
-    Restore spaces to text at original positions.
+    Restore invalid characters to text at original positions.
     
     Args:
-        text: Text without spaces
-        space_positions: List of original space positions
+        text: Text with only valid characters
+        invalid_chars: List of (position, character) tuples
     
     Returns:
-        Text with spaces restored
+        Text with invalid characters restored
     """
-    if not space_positions:
+    if not invalid_chars:
         return text
     
     result = list(text)
-    for pos in sorted(space_positions, reverse=True):
+    # Chèn từ cuối để không ảnh hưởng vị trí
+    for pos, char in sorted(invalid_chars, reverse=True):
         if pos <= len(result):
-            result.insert(pos, ' ')
+            result.insert(pos, char)
     
     return ''.join(result)
 
 
-def preprocess_text(text: str, matrix_size: int = 5) -> str:
+def preprocess_text(text: str, matrix_size: int = 5, pad_double_letters: bool = True, padding_char: str = 'X') -> str:
     """
     Preprocess text for Playfair encryption.
     Filters valid characters, handles duplicates, and adds padding.
@@ -59,6 +102,8 @@ def preprocess_text(text: str, matrix_size: int = 5) -> str:
     Args:
         text: Input text to preprocess
         matrix_size: Size of matrix (5 or 6)
+        pad_double_letters: If True, insert padding between duplicate letters
+        padding_char: Character to use for padding (default 'X')
     """
     # Convert to uppercase and filter valid characters
     if matrix_size == 5:
@@ -73,14 +118,18 @@ def preprocess_text(text: str, matrix_size: int = 5) -> str:
         return ""
 
     characters: List[str] = list(text)
-    i = 0
-    while i < len(characters) - 1:
-        if characters[i] == characters[i + 1]:
-            characters.insert(i + 1, "X")
-        i += 2
-
+    
+    # Handle double letters if enabled
+    if pad_double_letters:
+        i = 0
+        while i < len(characters) - 1:
+            if characters[i] == characters[i + 1]:
+                characters.insert(i + 1, padding_char)
+            i += 2
+    
+    # Ensure even length
     if len(characters) % 2 != 0:
-        characters.append("X")
+        characters.append(padding_char)
 
     return "".join(characters)
 
@@ -149,23 +198,37 @@ def find_position(char: str, pos_map: PositionMap) -> Tuple[int, int]:
     return pos_map[char]
 
 
-def playfair_encrypt(plaintext: str, matrix: Matrix, pos_map: PositionMap) -> Tuple[str, List[Dict], str, str]:
+def playfair_encrypt(plaintext: str, matrix: Matrix, pos_map: PositionMap, pad_double_letters: bool = True, padding_char: str = 'X') -> Tuple[str, List[Dict], str, str]:
     """
     Encrypt plaintext using Playfair cipher with step tracking.
-    Preserves spaces in the original text.
+    Preserves all invalid characters (spaces, punctuation, etc.) in the original text.
+    
+    Args:
+        plaintext: Text to encrypt
+        matrix: Playfair matrix
+        pos_map: Position map of characters in matrix
+        pad_double_letters: If True, insert padding between duplicate letters
+        padding_char: Character to use for padding
     
     Returns:
-        Tuple of (ciphertext, steps, preprocessed_text, ciphertext_with_spaces) where:
-        - ciphertext: encrypted text without spaces
+        Tuple of (ciphertext, steps, preprocessed_text, ciphertext_with_invalid) where:
+        - ciphertext: encrypted text without invalid characters
         - steps: list of encryption details
         - preprocessed_text: text after preprocessing
-        - ciphertext_with_spaces: encrypted text with original spaces
+        - ciphertext_with_invalid: encrypted text with original invalid characters
     """
     size = len(matrix)
     
-    # Extract spaces before processing
-    text_no_spaces, space_positions = extract_spaces(plaintext)
-    preprocessed = preprocess_text(text_no_spaces, matrix_size=size)
+    # Lưu lại các vị trí và ký tự không hợp lệ trong text gốc
+    invalid_positions = []
+    for i, char in enumerate(plaintext):
+        is_valid = (size == 5 and char.isalpha()) or (size == 6 and char.isalnum())
+        if not is_valid:
+            invalid_positions.append((i, char))
+    
+    # Extract và preprocess text
+    text_valid_only, _ = extract_invalid_chars(plaintext, matrix_size=size)
+    preprocessed = preprocess_text(text_valid_only, matrix_size=size, pad_double_letters=pad_double_letters, padding_char=padding_char)
     
     if not preprocessed:
         return "", [], "", ""
@@ -211,43 +274,76 @@ def playfair_encrypt(plaintext: str, matrix: Matrix, pos_map: PositionMap) -> Tu
         ciphertext_chars.append(c2)
 
     ciphertext = "".join(ciphertext_chars)
-    ciphertext_with_spaces = restore_spaces(ciphertext, space_positions)
     
-    return ciphertext, steps, preprocessed, ciphertext_with_spaces
+    # Restore invalid chars vào đúng vị trí gốc
+    # Chỉ lấy số ký tự hợp lệ bằng với số ký tự hợp lệ trong plaintext
+    result = []
+    cipher_idx = 0
+    valid_count_in_plaintext = sum(1 for c in plaintext if (size == 5 and c.isalpha()) or (size == 6 and c.isalnum()))
+    
+    for i, char in enumerate(plaintext):
+        is_valid = (size == 5 and char.isalpha()) or (size == 6 and char.isalnum())
+        if is_valid and cipher_idx < valid_count_in_plaintext:
+            result.append(ciphertext[cipher_idx])
+            cipher_idx += 1
+        else:
+            result.append(char)
+    
+    ciphertext_with_invalid = ''.join(result)
+    
+    return ciphertext, steps, preprocessed, ciphertext_with_invalid
 
 
-def postprocess_decrypted(text: str) -> str:
+def postprocess_decrypted(text: str, padding_char: str = 'X') -> str:
+    """
+    Remove padding characters from decrypted text.
+    
+    Args:
+        text: Decrypted text
+        padding_char: Padding character to remove
+    
+    Returns:
+        Text with padding removed
+    """
     result: List[str] = []
     for i, char in enumerate(text):
-        if i > 0 and i + 1 < len(text) and char == "X" and text[i - 1] == text[i + 1]:
+        # Xóa padding giữa các chữ giống nhau
+        if i > 0 and i + 1 < len(text) and char == padding_char and text[i - 1] == text[i + 1]:
             continue
         result.append(char)
 
-    if result and result[-1] == "X":
+    # Xóa padding ở cuối nếu có
+    if result and result[-1] == padding_char:
         result.pop()
 
     return "".join(result)
 
 
-def playfair_decrypt(ciphertext: str, matrix: Matrix, pos_map: PositionMap) -> Tuple[str, List[Dict], str]:
+def playfair_decrypt(ciphertext: str, matrix: Matrix, pos_map: PositionMap, padding_char: str = 'X') -> Tuple[str, List[Dict], str]:
     """
     Decrypt ciphertext using Playfair cipher with step tracking.
     Only processes valid characters in the matrix.
-    Preserves spaces in the original ciphertext.
+    Preserves all invalid characters in the original ciphertext.
+    
+    Args:
+        ciphertext: Text to decrypt
+        matrix: Playfair matrix
+        pos_map: Position map of characters in matrix
+        padding_char: Padding character used in encryption
     
     Returns:
-        Tuple of (plaintext, steps, plaintext_with_spaces) where:
-        - plaintext: decrypted text without spaces
+        Tuple of (plaintext, steps, plaintext_with_invalid) where:
+        - plaintext: decrypted text without invalid characters
         - steps: list of decryption details
-        - plaintext_with_spaces: decrypted text with original spaces
+        - plaintext_with_invalid: decrypted text with original invalid characters
     """
     size = len(matrix)
     
-    # Extract spaces before processing
-    text_no_spaces, space_positions = extract_spaces(ciphertext)
+    # Extract invalid characters
+    text_valid_only, _ = extract_invalid_chars(ciphertext, matrix_size=size)
     
-    # Clean ciphertext - only keep valid characters
-    valid_chars = "".join(c for c in text_no_spaces.upper() if c in pos_map)
+    # Clean ciphertext - only keep valid characters in matrix
+    valid_chars = "".join(c for c in text_valid_only.upper() if c in pos_map)
     
     if not valid_chars:
         return "", [], ""
@@ -292,7 +388,40 @@ def playfair_decrypt(ciphertext: str, matrix: Matrix, pos_map: PositionMap) -> T
         plaintext_chars.append(p1)
         plaintext_chars.append(p2)
 
-    plaintext = postprocess_decrypted("".join(plaintext_chars))
-    plaintext_with_spaces = restore_spaces(plaintext, space_positions)
+    plaintext = postprocess_decrypted("".join(plaintext_chars), padding_char=padding_char)
     
-    return plaintext, steps, plaintext_with_spaces
+    # Restore invalid chars vào đúng vị trí gốc
+    result = list(ciphertext)
+    plain_idx = 0
+    
+    for i in range(len(result)):
+        is_valid = (size == 5 and result[i].isalpha()) or (size == 6 and result[i].isalnum())
+        if is_valid and plain_idx < len(plaintext):
+            result[i] = plaintext[plain_idx]
+            plain_idx += 1
+    
+    plaintext_with_invalid = ''.join(result)
+    
+    return plaintext, steps, plaintext_with_invalid
+
+
+def format_output(text: str, format_type: str = 'none') -> str:
+    """
+    Format encrypted/decrypted output text.
+    
+    Args:
+        text: Text to format
+        format_type: 'none', 'groups_of_5', or 'groups_of_2'
+    
+    Returns:
+        Formatted text
+    """
+    # Remove existing spaces for reformatting
+    text_no_spaces = text.replace(' ', '')
+    
+    if format_type == 'groups_of_5':
+        return ' '.join(text_no_spaces[i:i+5] for i in range(0, len(text_no_spaces), 5))
+    elif format_type == 'groups_of_2':
+        return ' '.join(text_no_spaces[i:i+2] for i in range(0, len(text_no_spaces), 2))
+    else:
+        return text
