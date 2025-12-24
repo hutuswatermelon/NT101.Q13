@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rsa'))
 
 from playfair import generate_matrix, playfair_encrypt, playfair_decrypt, format_output
 
+
 # Import advanced RSA library
 try:
     from rsa import (
@@ -407,13 +408,23 @@ def main() -> None:
             with st.sidebar:
                 st.subheader("Cấu hình")
                 
-                st.markdown("**Độ dài khóa:**")
-                key_bits = st.selectbox(
-                    "Bits",
-                    [512, 1024, 2048, 4096],
-                    index=1,
-                    help="Độ dài khóa càng lớn càng an toàn nhưng chậm hơn"
+                st.markdown("**Chế độ tạo khóa:**")
+                key_generation_mode = st.radio(
+                    "Chọn chế độ:",
+                    ["Tự động", "Thủ công"],
+                    help="Tự động: Chương trình tạo khóa\nThủ công: Tự nhập các tham số p, q, e"
                 )
+                
+                if key_generation_mode == "Tự động":
+                    st.markdown("**Độ dài khóa:**")
+                    key_bits = st.selectbox(
+                        "Bits",
+                        [512, 1024, 2048, 4096],
+                        index=1,
+                        help="Độ dài khóa càng lớn càng an toàn nhưng chậm hơn"
+                    )
+                else:
+                    key_bits = None  # Will use manual parameters
                 
                 st.markdown("---")
                 st.markdown("**Tùy chọn hiển thị:**")
@@ -442,43 +453,159 @@ def main() -> None:
             with tab1:
                 st.subheader("Tạo cặp khóa RSA")
                 
-                st.info(f"Khóa sẽ được tạo với độ dài **{key_bits} bits**")
-                
-                col1, col2, col3 = st.columns([2, 1, 1])
-                
-                with col1:
-                    if st.button("Tạo khóa RSA", type="primary", use_container_width=True):
-                        with st.spinner(f"Đang tạo khóa {key_bits} bits..."):
-                            try:
-                                # Generate keypair using professional library
-                                keypair = generate_keypair(bits=key_bits)
-                                st.session_state.rsa_keypair = keypair
-                                
-                                st.success(f"Tạo khóa thành công! ({key_bits} bits)")
-                                
-                                if show_details:
-                                    st.subheader("Chi tiết khóa RSA")
+                if key_generation_mode == "Tự động":
+                    st.info(f"Khóa sẽ được tạo với độ dài **{key_bits} bits**")
+                    
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    
+                    with col1:
+                        if st.button("Tạo khóa RSA", type="primary", use_container_width=True):
+                            with st.spinner(f"Đang tạo khóa {key_bits} bits..."):
+                                try:
+                                    # Generate keypair using professional library
+                                    keypair = generate_keypair(bits=key_bits)
+                                    st.session_state.rsa_keypair = keypair
                                     
-                                    col1, col2 = st.columns(2)
-                                    
-                                    with col1:
-                                        st.markdown("**Khóa công khai (Public Key):**")
-                                        st.info(f"**e** (exponent): {keypair.public.e}")
-                                        st.info(f"**n** (modulus): {keypair.public.n}")
+                                    st.success(f"Tạo khóa thành công! ({key_bits} bits)")
+                                
+                                    if show_details:
+                                        st.subheader("Chi tiết khóa RSA")
                                         
-                                        # Calculate bit length
-                                        bit_length = keypair.public.n.bit_length()
-                                        st.caption(f"Độ dài khóa: {bit_length} bits")
-                                    
-                                    with col2:
-                                        st.markdown("**Khóa riêng (Private Key):**")
-                                        st.error(f"**d** (private exponent): {keypair.private.d}")
-                                        st.error(f"**n** (modulus): {keypair.private.n}")
+                                        col1, col2 = st.columns(2)
                                         
-                                        st.caption("⚠️ BẢO MẬT - Không chia sẻ khóa riêng!")
+                                        with col1:
+                                            st.markdown("**Khóa công khai (Public Key):**")
+                                            st.info(f"**e** (exponent): {keypair.public.e}")
+                                            st.info(f"**n** (modulus): {keypair.public.n}")
+                                            
+                                            # Calculate bit length
+                                            bit_length = keypair.public.n.bit_length()
+                                            st.caption(f"Độ dài khóa: {bit_length} bits")
+                                        
+                                        with col2:
+                                            st.markdown("**Khóa riêng (Private Key):**")
+                                            st.error(f"**d** (private exponent): {keypair.private.d}")
+                                            st.error(f"**n** (modulus): {keypair.private.n}")
+                                            
+                                            st.caption("Không chia sẻ khóa riêng!")
                                 
-                            except Exception as e:
-                                st.error(f"❌ Lỗi: {e}")
+                                except Exception as e:
+                                    st.error(f"Lỗi: {e}")
+                
+                else:  # Manual mode
+                    st.info("**Chế độ thủ công:** Nhập các tham số RSA")
+                    
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**Số nguyên tố p:**")
+                        p_input = st.text_input(
+                            "p",
+                            placeholder="Nhập số nguyên tố p",
+                            help="Số nguyên tố lớn (ví dụ: 61)",
+                            label_visibility="collapsed"
+                        )
+                        
+                        st.markdown("**Số nguyên tố q:**")
+                        q_input = st.text_input(
+                            "q",
+                            placeholder="Nhập số nguyên tố q (khác p)",
+                            help="Số nguyên tố lớn khác p (ví dụ: 53)",
+                            label_visibility="collapsed"
+                        )
+                    
+                    with col2:
+                        st.markdown("**Số mũ công khai e:**")
+                        e_input = st.text_input(
+                            "e",
+                            value="65537",
+                            placeholder="Nhập e (thường dùng: 3, 65537)",
+                            help="Số mũ công khai (coprime với φ(n))",
+                            label_visibility="collapsed"
+                        )
+                        
+                        st.markdown("**Ví dụ tham số:**")
+                        st.caption("p = 61, q = 53, e = 17")
+                        st.caption("p = 1009, q = 1013, e = 65537")
+                    
+                    if st.button("Tạo khóa từ tham số", type="primary", use_container_width=True):
+                        try:
+                            
+                            # Parse inputs
+                            if not p_input or not q_input or not e_input:
+                                st.error("Vui lòng nhập đầy đủ các tham số p, q, e!")
+                            else:
+                                p = int(p_input)
+                                q = int(q_input)
+                                e = int(e_input)
+                                
+                                # Validation
+                                errors = []
+                                
+                                if not is_probable_prime(p):
+                                    errors.append(f"p = {p} không phải là số nguyên tố")
+                                if not is_probable_prime(q):
+                                    errors.append(f"q = {q} không phải là số nguyên tố")
+                                if p == q:
+                                    errors.append("p và q phải khác nhau")
+                                if e <= 1:
+                                    errors.append("e phải lớn hơn 1")
+                                
+                                if errors:
+                                    for error in errors:
+                                        st.error(error)
+                                else:
+                                    # Calculate RSA parameters
+                                    n = p * q
+                                    phi = (p - 1) * (q - 1)
+                                    
+                                    if gcd(e, phi) != 1:
+                                        st.error(f"e = {e} và φ(n) = {phi} không nguyên tố cùng nhau!")
+                                        st.info(f"φ(n) = (p-1)(q-1) = {p-1} × {q-1} = {phi}")
+                                        st.caption(f"Gợi ý: Chọn e sao cho gcd(e, {phi}) = 1")
+                                    else:
+                                        # Calculate private exponent d
+                                        d = modinv(e, phi)
+                                        
+                                        # Create keypair
+                                        keypair = KeyPair(
+                                            public=PublicKey(e=e, n=n),
+                                            private=PrivateKey(d=d, n=n)
+                                        )
+                                        
+                                        st.session_state.rsa_keypair = keypair
+                                        
+                                        bit_length = n.bit_length()
+                                        st.success(f"Tạo khóa thành công! ({bit_length} bits)")
+                                        
+                                        # Display calculation details
+                                        if show_details:
+                                            st.subheader("Chi tiết tính toán")
+                                            
+                                            col1, col2 = st.columns(2)
+                                            
+                                            with col1:
+                                                st.markdown("**Tham số đầu vào:**")
+                                                st.code(f"p = {p}\nq = {q}\ne = {e}", language="python")
+                                                
+                                                st.markdown("**Tính toán:**")
+                                                st.code(f"n = p × q = {p} × {q} = {n}\nφ(n) = (p-1)(q-1) = {p-1} × {q-1} = {phi}", language="python")
+                                            
+                                            with col2:
+                                                st.markdown("**Khóa công khai:**")
+                                                st.info(f"Public Key = (e, n)\ne = {e}\nn = {n}")
+                                                
+                                                st.markdown("**Khóa riêng:**")
+                                                st.error(f"Private Key = (d, n)\nd = {d}\nn = {n}")
+                                                st.caption(f"d = e⁻¹ mod φ(n) = {e}⁻¹ mod {phi}")
+                                        
+                        except ValueError as ve:
+                            st.error(f"Lỗi định dạng: Vui lòng nhập số nguyên hợp lệ!")
+                            st.caption(str(ve))
+                        except Exception as e:
+                            st.error(f"Lỗi: {e}")
+                            import traceback
+                            st.caption(traceback.format_exc())
                 
                 # Display current keypair if exists
                 if st.session_state.rsa_keypair:
@@ -499,13 +626,13 @@ def main() -> None:
                         st.markdown("**Khóa riêng:**")
                         with st.expander("Xem chi tiết (BẢO MẬT)"):
                             st.code(f"d = {keypair.private.d}\nn = {keypair.private.n}", language="python")
-                        st.caption("⚠️ KHÔNG chia sẻ!")
+                        st.caption("KHÔNG chia sẻ!")
             
             with tab2:
                 st.subheader("Mã hóa & Giải mã")
                 
                 if not st.session_state.rsa_keypair:
-                    st.warning("⚠️ Vui lòng tạo khóa RSA trước ở tab 'Tạo khóa'!")
+                    st.warning("Vui lòng tạo khóa RSA trước ở tab 'Tạo khóa'!")
                 else:
                     operation = st.radio("Chọn thao tác:", ["Mã hóa", "Giải mã"], horizontal=True)
                     
@@ -519,7 +646,7 @@ def main() -> None:
                         
                         if st.button("Mã hóa", type="primary"):
                             if not plaintext:
-                                st.warning("⚠️ Vui lòng nhập văn bản!")
+                                st.warning("Vui lòng nhập văn bản!")
                             else:
                                 try:
                                     keypair = st.session_state.rsa_keypair
@@ -587,7 +714,7 @@ def main() -> None:
                                     })
                                     
                                 except Exception as e:
-                                    st.error(f"❌ Lỗi: {e}")
+                                    st.error(f"Lỗi: {e}")
                     
                     else:  # Giải mã
                         st.markdown("### Giải mã văn bản")
@@ -599,7 +726,7 @@ def main() -> None:
                         
                         if st.button("Giải mã", type="primary"):
                             if not envelope_input:
-                                st.warning("⚠️ Vui lòng nhập envelope!")
+                                st.warning("Vui lòng nhập envelope!")
                             else:
                                 try:
                                     keypair = st.session_state.rsa_keypair
@@ -622,7 +749,7 @@ def main() -> None:
                                         # Convert bytes to text
                                         plaintext = bytes_to_text(decrypted_data)
                                     
-                                    st.success("✅ Giải mã thành công!")
+                                    st.success("Giải mã thành công!")
                                     
                                     st.subheader("Văn bản gốc:")
                                     
@@ -647,13 +774,13 @@ def main() -> None:
                                     })
                                     
                                 except Exception as e:
-                                    st.error(f"❌ Lỗi giải mã: {e}")
+                                    st.error(f"Lỗi giải mã: {e}")
             
             with tab3:
                 st.subheader("Chữ ký số (Digital Signature)")
                 
                 if not st.session_state.rsa_keypair:
-                    st.warning("⚠️ Vui lòng tạo khóa RSA trước ở tab 'Tạo khóa'!")
+                    st.warning("Vui lòng tạo khóa RSA trước ở tab 'Tạo khóa'!")
                 else:
                     sign_mode = st.radio("Chọn chức năng:", ["Ký văn bản", "Xác thực chữ ký"], horizontal=True)
                     
@@ -668,7 +795,7 @@ def main() -> None:
                         
                         if st.button("Ký", type="primary"):
                             if not message:
-                                st.warning("⚠️ Vui lòng nhập văn bản!")
+                                st.warning("Vui lòng nhập văn bản!")
                             else:
                                 try:
                                     keypair = st.session_state.rsa_keypair
@@ -678,7 +805,7 @@ def main() -> None:
                                         signature = sign_bytes(data, keypair.private)
                                         signature_b64 = b64e(signature)
                                     
-                                    st.success("✅ Đã tạo chữ ký số!")
+                                    st.success("Đã tạo chữ ký số!")
                                     
                                     st.subheader("Chữ ký (Base64):")
                                     
@@ -713,7 +840,7 @@ def main() -> None:
                                     })
                                     
                                 except Exception as e:
-                                    st.error(f"❌ Lỗi: {e}")
+                                    st.error(f"Lỗi: {e}")
                     
                     else:  # Xác thực
                         st.markdown("### Xác thực chữ ký số")
@@ -734,9 +861,9 @@ def main() -> None:
                                 placeholder="Nhập chữ ký cần xác thực..."
                             )
                         
-                        if st.button("✅ Xác thực", type="primary"):
+                        if st.button("Xác thực", type="primary"):
                             if not message or not signature_input:
-                                st.warning("⚠️ Vui lòng nhập cả văn bản và chữ ký!")
+                                st.warning("Vui lòng nhập cả văn bản và chữ ký!")
                             else:
                                 try:
                                     keypair = st.session_state.rsa_keypair
@@ -747,17 +874,17 @@ def main() -> None:
                                         is_valid = verify_bytes(data, signature, keypair.public)
                                     
                                     if is_valid:
-                                        st.success("✅ CHỮ KÝ HỢP LỆ - Văn bản xác thực thành công!")
+                                        st.success("CHỮ KÝ HỢP LỆ - Văn bản xác thực thành công!")
                                         st.balloons()
                                     else:
-                                        st.error("❌ CHỮ KÝ KHÔNG HỢP LỆ - Văn bản có thể đã bị thay đổi!")
+                                        st.error("CHỮ KÝ KHÔNG HỢP LỆ - Văn bản có thể đã bị thay đổi!")
                                     
                                     # Add to history
                                     st.session_state.history.append({
                                         "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         "type": "Xác thực",
                                         "input": message[:50] + "..." if len(message) > 50 else message,
-                                        "output": "Hợp lệ" if is_valid else "❌ Không hợp lệ",
+                                        "output": "Hợp lệ" if is_valid else "Không hợp lệ",
                                         "details": f"RSA Signature Verification ({keypair.public.n.bit_length()} bits)"
                                     })
                                     
