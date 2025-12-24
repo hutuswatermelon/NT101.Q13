@@ -492,7 +492,7 @@ def main() -> None:
                                     st.error(f"Lỗi: {e}")
                 
                 else:  # Manual mode
-                    st.info("🔧 **Chế độ thủ công:** Nhập các tham số RSA")
+                    st.info("**Chế độ thủ công:** Nhập các tham số RSA")
                     
                     col1, col2 = st.columns(2)
                     
@@ -625,7 +625,7 @@ def main() -> None:
                         st.caption(f"Độ dài: {bit_length} bits")
                     
                     with col2:
-                        st.markdown("**🔐 Khóa riêng:**")
+                        st.markdown("**Khóa riêng:**")
                         with st.expander("Xem chi tiết (BẢO MẬT)"):
                             st.code(f"d = {keypair.private.d}\nn = {keypair.private.n}", language="python")
                         st.caption("KHÔNG chia sẻ!")
