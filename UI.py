@@ -657,17 +657,16 @@ def main() -> None:
                                         data = text_to_bytes(plaintext)
                                         
                                         # Encrypt using hybrid mode (RSA + AES)
-                                        envelope = encrypt_hybrid(data, keypair.public)
+                                        # encrypt_hybrid returns bytes (JSON encoded)
+                                        envelope_bytes = encrypt_hybrid(data, keypair.public)
                                         
-                                        # Convert envelope to base64 for display
-                                        envelope_b64 = {
-                                            'ciphertext': b64e(envelope['ciphertext']),
-                                            'encrypted_key': b64e(envelope['encrypted_key'])
-                                        }
-                                        
-                                        # Create compact display format
+                                        # Decode to string for display
                                         import json
-                                        envelope_str = json.dumps(envelope_b64, indent=2)
+                                        envelope_str = envelope_bytes.decode('utf-8')
+                                        
+                                        # Pretty print the JSON
+                                        envelope_dict = json.loads(envelope_str)
+                                        envelope_str = json.dumps(envelope_dict, indent=2)
                                     
                                     st.success("Mã hóa thành công!")
                                     
@@ -735,17 +734,12 @@ def main() -> None:
                                     with st.spinner("Đang giải mã..."):
                                         import json
                                         
-                                        # Parse envelope
-                                        envelope_b64 = json.loads(envelope_input)
+                                        # Parse envelope JSON input and convert to bytes
+                                        # decrypt_hybrid expects the bytes format from encrypt_hybrid
+                                        envelope_bytes = envelope_input.encode('utf-8')
                                         
-                                        # Decode from base64
-                                        envelope = {
-                                            'ciphertext': b64d(envelope_b64['ciphertext']),
-                                            'encrypted_key': b64d(envelope_b64['encrypted_key'])
-                                        }
-                                        
-                                        # Decrypt using hybrid mode
-                                        decrypted_data = decrypt_hybrid(envelope, keypair.private)
+                                        # Decrypt using hybrid mode (returns tuple: data, sig_verified)
+                                        decrypted_data, sig_verified = decrypt_hybrid(envelope_bytes, keypair.private, verify_sig=False)
                                         
                                         # Convert bytes to text
                                         plaintext = bytes_to_text(decrypted_data)
