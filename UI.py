@@ -26,6 +26,7 @@ try:
     from rsa.models import KeyPair, PublicKey, PrivateKey
     USE_ADVANCED_RSA = True
 
+from rsa.prime import is_probable_prime
 except ImportError:
     # Fallback to simple RSA
     from rsa import (
