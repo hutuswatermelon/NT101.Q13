@@ -9,8 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rsa'))
 
 from playfair import generate_matrix, playfair_encrypt, playfair_decrypt, format_output
 
-from rsa.prime import is_probable_prime
-
 # Import advanced RSA library
 try:
     from rsa import (
@@ -25,6 +23,7 @@ try:
         b64d,
     )
     from rsa.models import KeyPair, PublicKey, PrivateKey
+    from rsa.prime import is_probable_prime
     USE_ADVANCED_RSA = True
 
 except ImportError:
