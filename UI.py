@@ -697,8 +697,12 @@ def main() -> None:
                                             col1, col2 = st.columns(2)
                                             
                                             with col1:
-                                                st.metric("AES Ciphertext (bytes)", len(envelope.get('ciphertext', b'')))
-                                                st.metric("Encrypted AES Key (bytes)", len(envelope.get('encrypted_key', b'')))
+                                                # Get base64 decoded sizes from envelope_dict
+                                                import base64
+                                                ct_size = len(base64.b64decode(envelope_dict.get('ct', '')))
+                                                ek_size = len(base64.b64decode(envelope_dict.get('ek', '')))
+                                                st.metric("AES Ciphertext (bytes)", ct_size)
+                                                st.metric("Encrypted AES Key (bytes)", ek_size)
                                             
                                             with col2:
                                                 st.metric("Algorithm", "RSA-AES Hybrid")
