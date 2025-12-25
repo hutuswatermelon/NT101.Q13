@@ -28,6 +28,37 @@ from rsa import (
 )
 from rsa.models import KeyPair, PublicKey, PrivateKey
 
+def is_probable_prime(n: int, rounds: int = 40) -> bool:
+    if n < 2:
+        return False
+    for p in _SMALL_PRIMES:
+        if n == p:
+            return True
+        if n % p == 0:
+            return False
+
+    # n - 1 = d * 2^s
+    d = n - 1
+    s = 0
+    while (d & 1) == 0:
+        d >>= 1
+        s += 1
+
+    def witness(a: int) -> bool:
+        x = modexp(a, d, n)
+        if x == 1 or x == n - 1:
+            return True
+        for _ in range(s - 1):
+            x = (x * x) % n
+            if x == n - 1:
+                return True
+        return False
+
+    for _ in range(rounds):
+        a = secrets.randbelow(n - 3) + 2  # [2, n-2]
+        if not witness(a):
+            return False
+    return True
 
 def display_keypair_info(keypair: KeyPair) -> None:
     """Display RSA keypair information."""

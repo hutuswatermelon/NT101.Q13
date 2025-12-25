@@ -25,6 +25,7 @@ try:
     )
     from rsa.models import KeyPair, PublicKey, PrivateKey
     USE_ADVANCED_RSA = True
+
 except ImportError:
     # Fallback to simple RSA
     from rsa import (
