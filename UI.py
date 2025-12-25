@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rsa'))
 
 from playfair import generate_matrix, playfair_encrypt, playfair_decrypt, format_output
 
+from rsa.prime import is_probable_prime
 
 # Import advanced RSA library
 try:
@@ -26,7 +27,6 @@ try:
     from rsa.models import KeyPair, PublicKey, PrivateKey
     USE_ADVANCED_RSA = True
 
-from rsa.prime import is_probable_prime
 except ImportError:
     # Fallback to simple RSA
     from rsa import (
